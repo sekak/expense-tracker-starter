@@ -15,13 +15,14 @@ npm run preview  # Preview production build
 
 ## Architecture
 
-Single-page React app. All logic and UI live in [src/App.jsx](src/App.jsx) — no routing, no external state management, no component split.
+Single-page React app with no routing or external state management. `transactions` array is the only shared state, lifted into `App`.
 
-**App state:**
-- `transactions` — array of `{ id, description, amount, type, category, date }`. `amount` is stored as a **string** (intentional bug: causes `reduce` to concatenate instead of sum).
-- Form fields: `description`, `amount`, `type`, `category` (controlled inputs for adding transactions).
-- Filter fields: `filterType`, `filterCategory` (filter the transaction table).
+**Component tree:**
+- [src/App.jsx](src/App.jsx) — holds `transactions` state and seed data; passes it down to all children
+- [src/Summary.jsx](src/Summary.jsx) — receives `transactions`, computes `totalIncome`, `totalExpenses`, `balance` internally
+- [src/TransactionForm.jsx](src/TransactionForm.jsx) — owns its own form state (`description`, `amount`, `type`, `category`); calls `onAdd(transaction)` prop on submit
+- [src/TransactionList.jsx](src/TransactionList.jsx) — receives `transactions`, owns its own filter state (`filterType`, `filterCategory`)
 
-**Data flow:** summary totals (income / expenses / balance) and filtered transactions are derived inline during render — no memoization, no derived state. No persistence; state resets on reload.
+**Data flow:** `App` owns the source-of-truth array. `Summary` and `TransactionList` read from it; `TransactionForm` writes to it via `onAdd`. No persistence — state resets on reload.
 
-**Intentional issues (part of a course):** `amount` as string breaks arithmetic totals; "Freelance Work" is typed `expense` but categorized `salary`.
+**`categories`** constant is duplicated in `TransactionForm` and `TransactionList` — not yet extracted to a shared file.
